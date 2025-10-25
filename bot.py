@@ -2,6 +2,7 @@
 # ✅ Discord 인증 봇 (Koyeb 버전)
 # ────────────────────────────────
 import os
+import asyncio
 from dotenv import load_dotenv
 import discord
 from discord.ext import commands
@@ -42,6 +43,17 @@ def has_any_role(member: discord.Member) -> bool:
     """사용자가 특정 역할 중 하나라도 가지고 있는지 확인"""
     return any(discord.utils.get(member.roles, name=role) for role in ALL_ROLES)
 
+# ────────────────────────────────
+# ✅ 메시지 삭제 기능 (고정 메시지 제외)
+# ────────────────────────────────
+async def clear_channel_messages(channel: discord.TextChannel):
+    await asyncio.sleep(10)  # 10초 대기
+    async for message in channel.history(limit=None):
+        if not message.pinned:  # 고정 메시지는 삭제하지 않음
+            try:
+                await message.delete()
+            except discord.Forbidden:
+                print(f"❗ 메시지 삭제 실패: {message.id}")
 
 # ────────────────────────────────
 # ✅ 이벤트 핸들러
@@ -113,6 +125,8 @@ async def on_message(message):
             f"3회 실패 시 강퇴됩니다."
         )
 
+    # 모든 행위 종료 후 10초 뒤 메시지 삭제
+    bot.loop.create_task(clear_channel_messages(message.channel))
 
 # ────────────────────────────────
 # ✅ 봇 실행
